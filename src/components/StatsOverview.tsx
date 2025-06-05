@@ -70,38 +70,33 @@ const mockData = [
 const chartMargin = { top: 20, right: 60, bottom: 30, left: 60 };
 
 export function StatsOverview() {
-  const [startIndex, setStartIndex] = useState<number | null>(null);
-  const [endIndex, setEndIndex] = useState<number | null>(null);
+  const [selection, setSelection] = useState({ start: null, end: null });
 
-  const handleMouseDown = (e: any) => {
-    if (!e.activeLabel) return;
+  const handleMouseDown = (e) => {
+    if (!e?.activeLabel) return;
     const index = mockData.findIndex(d => d.time === e.activeLabel);
-    if (index !== startIndex) {
-      setStartIndex(index);
-      setEndIndex(null);
-    }
+    setSelection({ start: index, end: index });
   };
 
-  const handleMouseMove = (e: any) => {
-    if (startIndex === null || !e.activeLabel) return;
+  const handleMouseMove = (e) => {
+    if (selection.start === null || !e?.activeLabel) return;
     const index = mockData.findIndex(d => d.time === e.activeLabel);
-    if (index !== endIndex) {
-      setEndIndex(index);
+    if (index !== selection.end) {
+      setSelection(prev => ({ ...prev, end: index }));
     }
   };
 
   const handleMouseUp = () => {
-    if (startIndex === endIndex) {
-      setStartIndex(null);
-      setEndIndex(null);
+    if (selection.start === selection.end) {
+      setSelection({ start: null, end: null });
     }
   };
 
   const getSegmentStats = () => {
-    if (startIndex === null || endIndex === null) return null;
+    if (selection.start === null || selection.end === null) return null;
     
-    const start = Math.min(startIndex, endIndex);
-    const end = Math.max(startIndex, endIndex);
+    const start = Math.min(selection.start, selection.end);
+    const end = Math.max(selection.start, selection.end);
     const segment = mockData.slice(start, end + 1);
     
     const avgPace = segment.reduce((sum, point) => sum + point.pace, 0) / segment.length;
@@ -149,10 +144,10 @@ export function StatsOverview() {
             <YAxis yAxisId="pace" domain={[5, 13]} />
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
-            {startIndex !== null && endIndex !== null && (
+            {selection.start !== null && selection.end !== null && (
               <ReferenceArea
-                x1={mockData[Math.min(startIndex, endIndex)].time}
-                x2={mockData[Math.max(startIndex, endIndex)].time}
+                x1={mockData[Math.min(selection.start, selection.end)].time}
+                x2={mockData[Math.max(selection.start, selection.end)].time}
                 y1={5}
                 y2={13}
                 yAxisId="pace"
