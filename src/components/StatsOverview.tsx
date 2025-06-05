@@ -60,13 +60,15 @@ const ChartContainer = styled.div`
 
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
-  top: 0;
+  top: 8px; /* Add padding for the top of the chart */
   left: ${props => props.left}px;
   width: ${props => props.width}px;
-  height: 100%;
+  height: calc(100% - 45px); /* Adjust for chart margins */
   background-color: rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 1;
+  margin-left: 60px; /* Adjust for Y-axis width */
+  margin-right: 60px; /* Adjust for right Y-axis width */
 `;
 
 const mockData = [
@@ -92,14 +94,18 @@ export function StatsOverview() {
   useEffect(() => {
     if (chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      setChartBounds({ left: rect.left, width: rect.width });
+      // Adjust the width to account for the axis margins
+      setChartBounds({ 
+        left: rect.left + 60, // Add left axis margin
+        width: rect.width - 120 // Subtract both axis margins
+      });
     }
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!chartRef.current) return;
     const rect = chartRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const x = Math.max(60, Math.min(rect.width - 60, e.clientX - rect.left)) - 60;
     setSelecting(true);
     setStartX(x);
     setCurrentX(x);
@@ -108,7 +114,7 @@ export function StatsOverview() {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (selecting && chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      const x = Math.max(0, Math.min(rect.width - 120, e.clientX - rect.left - 60));
       setCurrentX(x);
     }
   };
