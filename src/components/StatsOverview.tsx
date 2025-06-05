@@ -60,15 +60,13 @@ const ChartContainer = styled.div`
 
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
-  top: 8px; /* Add padding for the top of the chart */
+  top: 10px;
   left: ${props => props.left}px;
   width: ${props => props.width}px;
-  height: calc(100% - 45px); /* Adjust for chart margins */
+  height: calc(100% - 50px);
   background-color: rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 1;
-  margin-left: 60px; /* Adjust for Y-axis width */
-  margin-right: 60px; /* Adjust for right Y-axis width */
 `;
 
 const mockData = [
@@ -83,6 +81,8 @@ const mockData = [
   { time: '40:00', pace: 6.8, hr: 185 },
 ];
 
+const CHART_MARGIN = { left: 60, right: 60 };
+
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
   const [startX, setStartX] = useState<number | null>(null);
@@ -94,10 +94,9 @@ export function StatsOverview() {
   useEffect(() => {
     if (chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      // Adjust the width to account for the axis margins
       setChartBounds({ 
-        left: rect.left + 60, // Add left axis margin
-        width: rect.width - 120 // Subtract both axis margins
+        left: rect.left + CHART_MARGIN.left,
+        width: rect.width - (CHART_MARGIN.left + CHART_MARGIN.right)
       });
     }
   }, []);
@@ -105,17 +104,17 @@ export function StatsOverview() {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!chartRef.current) return;
     const rect = chartRef.current.getBoundingClientRect();
-    const x = Math.max(60, Math.min(rect.width - 60, e.clientX - rect.left)) - 60;
+    const x = Math.max(CHART_MARGIN.left, Math.min(rect.width - CHART_MARGIN.right, e.clientX - rect.left));
     setSelecting(true);
-    setStartX(x);
-    setCurrentX(x);
+    setStartX(x - CHART_MARGIN.left);
+    setCurrentX(x - CHART_MARGIN.left);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (selecting && chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width - 120, e.clientX - rect.left - 60));
-      setCurrentX(x);
+      const x = Math.max(CHART_MARGIN.left, Math.min(rect.width - CHART_MARGIN.right, e.clientX - rect.left));
+      setCurrentX(x - CHART_MARGIN.left);
     }
   };
 
@@ -129,7 +128,7 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [0, maxX],
+        left: [CHART_MARGIN.left, maxX + CHART_MARGIN.left],
         width: [minX, chartBounds.width - maxX]
       });
     } else {
