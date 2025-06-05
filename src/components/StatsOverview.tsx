@@ -95,7 +95,7 @@ export function StatsOverview() {
     if (chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
       setChartBounds({ 
-        left: rect.left + CHART_MARGIN.left,
+        left: rect.left,
         width: rect.width - (CHART_MARGIN.left + CHART_MARGIN.right)
       });
     }
@@ -104,17 +104,17 @@ export function StatsOverview() {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!chartRef.current) return;
     const rect = chartRef.current.getBoundingClientRect();
-    const x = Math.max(CHART_MARGIN.left, Math.min(rect.width - CHART_MARGIN.right, e.clientX - rect.left));
+    const x = Math.max(0, Math.min(chartBounds.width, e.clientX - (rect.left + CHART_MARGIN.left)));
     setSelecting(true);
-    setStartX(x - CHART_MARGIN.left);
-    setCurrentX(x - CHART_MARGIN.left);
+    setStartX(x);
+    setCurrentX(x);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (selecting && chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      const x = Math.max(CHART_MARGIN.left, Math.min(rect.width - CHART_MARGIN.right, e.clientX - rect.left));
-      setCurrentX(x - CHART_MARGIN.left);
+      const x = Math.max(0, Math.min(chartBounds.width, e.clientX - (rect.left + CHART_MARGIN.left)));
+      setCurrentX(x);
     }
   };
 
@@ -128,8 +128,8 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [CHART_MARGIN.left, maxX + CHART_MARGIN.left],
-        width: [minX, chartBounds.width - maxX]
+        left: [0, maxX + CHART_MARGIN.left],
+        width: [minX + CHART_MARGIN.left, chartBounds.width - maxX]
       });
     } else {
       setOverlayDimensions({ left: [], width: [] });
