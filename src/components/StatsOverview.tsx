@@ -134,6 +134,22 @@ export function StatsOverview() {
             <YAxis yAxisId="pace" domain={[5, 13]} />
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
+            {startIndex !== null && endIndex !== null && (
+              <>
+                <ReferenceArea
+                  x1={mockData[0].time}
+                  x2={mockData[Math.min(startIndex, endIndex)].time}
+                  fillOpacity={0.5}
+                  fill="#1f2937"
+                />
+                <ReferenceArea
+                  x1={mockData[Math.max(startIndex, endIndex)].time}
+                  x2={mockData[mockData.length - 1].time}
+                  fillOpacity={0.5}
+                  fill="#1f2937"
+                />
+              </>
+            )}
             <Area 
               yAxisId="pace"
               type="monotone" 
@@ -152,14 +168,6 @@ export function StatsOverview() {
               fillOpacity={0.3}
               name="Heart Rate"
             />
-            {startIndex !== null && endIndex !== null && (
-              <ReferenceArea
-                x1={mockData[Math.min(startIndex, endIndex)].time}
-                x2={mockData[Math.max(startIndex, endIndex)].time}
-                fillOpacity={0.2}
-                fill="#2563eb"
-              />
-            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
