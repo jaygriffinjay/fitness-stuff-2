@@ -56,15 +56,15 @@ const ChartContainer = styled.div`
 `;
 
 const mockData = [
-  { time: '0:00', pace: 12.0, hr: 90 }, // Walking
-  { time: '5:00', pace: 11.5, hr: 95 },
-  { time: '10:00', pace: 8.0, hr: 150 }, // Started running
-  { time: '15:00', pace: 7.5, hr: 165 },
-  { time: '20:00', pace: 7.2, hr: 170 },
-  { time: '25:00', pace: 9.5, hr: 140 }, // Slowed down
-  { time: '30:00', pace: 9.0, hr: 135 },
-  { time: '35:00', pace: 6.5, hr: 180 }, // Final sprint
-  { time: '40:00', pace: 6.8, hr: 185 },
+  { index: 0, time: '0:00', pace: 12.0, hr: 90 }, // Walking
+  { index: 1, time: '5:00', pace: 11.5, hr: 95 },
+  { index: 2, time: '10:00', pace: 8.0, hr: 150 }, // Started running
+  { index: 3, time: '15:00', pace: 7.5, hr: 165 },
+  { index: 4, time: '20:00', pace: 7.2, hr: 170 },
+  { index: 5, time: '25:00', pace: 9.5, hr: 140 }, // Slowed down
+  { index: 6, time: '30:00', pace: 9.0, hr: 135 },
+  { index: 7, time: '35:00', pace: 6.5, hr: 180 }, // Final sprint
+  { index: 8, time: '40:00', pace: 6.8, hr: 185 },
 ];
 
 export function StatsOverview() {
@@ -73,14 +73,16 @@ export function StatsOverview() {
 
   const handleMouseDown = (e: any) => {
     if (e.activeLabel) {
-      setStartIndex(mockData.findIndex(d => d.time === e.activeLabel));
+      const index = mockData.findIndex(d => d.time === e.activeLabel);
+      setStartIndex(index);
       setEndIndex(null);
     }
   };
 
   const handleMouseMove = (e: any) => {
     if (startIndex !== null && e.activeLabel) {
-      setEndIndex(mockData.findIndex(d => d.time === e.activeLabel));
+      const index = mockData.findIndex(d => d.time === e.activeLabel);
+      setEndIndex(index);
     }
   };
 
@@ -144,26 +146,15 @@ export function StatsOverview() {
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
             {startIndex !== null && endIndex !== null && (
-              <>
-                <ReferenceArea
-                  x={mockData[0].time}
-                  x2={mockData[Math.min(startIndex, endIndex)].time}
-                  y1={5}
-                  y2={13}
-                  yAxisId="pace"
-                  fill="#000"
-                  fillOpacity={0.3}
-                />
-                <ReferenceArea
-                  x={mockData[Math.max(startIndex, endIndex)].time}
-                  x2={mockData[mockData.length - 1].time}
-                  y1={5}
-                  y2={13}
-                  yAxisId="pace"
-                  fill="#000"
-                  fillOpacity={0.3}
-                />
-              </>
+              <ReferenceArea
+                x1={mockData[Math.min(startIndex, endIndex)].time}
+                x2={mockData[Math.max(startIndex, endIndex)].time}
+                y1={5}
+                y2={13}
+                yAxisId="pace"
+                fill="#000"
+                fillOpacity={0.3}
+              />
             )}
             <Area 
               yAxisId="pace"
