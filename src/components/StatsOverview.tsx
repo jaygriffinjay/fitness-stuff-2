@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 const Container = styled.div`
   background: white;
@@ -71,31 +71,29 @@ export function StatsOverview() {
   const [startIndex, setStartIndex] = useState<number | null>(null);
   const [endIndex, setEndIndex] = useState<number | null>(null);
 
-  const handleMouseDown = useCallback((e: any) => {
+  const handleMouseDown = (e: any) => {
     if (e.activeLabel) {
       const index = mockData.findIndex(d => d.time === e.activeLabel);
       setStartIndex(index);
-      setEndIndex(index);
+      setEndIndex(null);
     }
-  }, []);
+  };
 
-  const handleMouseMove = useCallback((e: any) => {
+  const handleMouseMove = (e: any) => {
     if (startIndex !== null && e.activeLabel) {
       const index = mockData.findIndex(d => d.time === e.activeLabel);
-      if (index !== endIndex) {
-        setEndIndex(index);
-      }
+      setEndIndex(index);
     }
-  }, [startIndex, endIndex]);
+  };
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     if (startIndex === endIndex) {
       setStartIndex(null);
       setEndIndex(null);
     }
-  }, [startIndex, endIndex]);
+  };
 
-  const getSegmentStats = useCallback(() => {
+  const getSegmentStats = () => {
     if (startIndex === null || endIndex === null) return null;
     
     const start = Math.min(startIndex, endIndex);
@@ -111,7 +109,7 @@ export function StatsOverview() {
       avgPace: avgPace.toFixed(1),
       avgHR: Math.round(avgHR),
     };
-  }, [startIndex, endIndex]);
+  };
 
   const segmentStats = getSegmentStats();
 
@@ -154,7 +152,7 @@ export function StatsOverview() {
                 y1={5}
                 y2={13}
                 yAxisId="pace"
-                fill="#fff"
+                fill="#000"
                 fillOpacity={0.3}
               />
             )}
