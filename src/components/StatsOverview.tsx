@@ -63,7 +63,7 @@ const CHART_MARGIN = { left: 60, right: 60, top: 20, bottom: 30 };
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
   top: ${CHART_MARGIN.top}px;
-  left: ${props => props.left}px;
+  left: ${props => props.left + CHART_MARGIN.left}px;
   width: ${props => props.width}px;
   height: calc(100% - ${CHART_MARGIN.top + CHART_MARGIN.bottom}px);
   background-color: rgba(0, 0, 0, 0.3);
@@ -128,8 +128,8 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [0, maxX + CHART_MARGIN.left],
-        width: [minX + CHART_MARGIN.left, chartBounds.width - maxX]
+        left: [0, maxX],
+        width: [minX, chartBounds.width - maxX]
       });
     } else {
       setOverlayDimensions({ left: [], width: [] });
