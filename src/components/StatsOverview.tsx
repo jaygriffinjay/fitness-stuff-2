@@ -67,10 +67,11 @@ export function StatsOverview() {
   const [endIndex, setEndIndex] = useState<number | null>(null);
 
   const handleMouseDown = (e: any) => {
-    setSelecting(true);
-    const index = e.activeTooltipIndex;
-    setStartIndex(index);
-    setEndIndex(index);
+    if (e.activeTooltipIndex !== undefined) {
+      setSelecting(true);
+      setStartIndex(e.activeTooltipIndex);
+      setEndIndex(e.activeTooltipIndex);
+    }
   };
 
   const handleMouseMove = (e: any) => {
@@ -129,6 +130,12 @@ export function StatsOverview() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
           >
+            <defs>
+              <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1f2937" stopOpacity={0.5}/>
+                <stop offset="100%" stopColor="#1f2937" stopOpacity={0.5}/>
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis yAxisId="pace" domain={[5, 13]} />
@@ -137,16 +144,16 @@ export function StatsOverview() {
             {startIndex !== null && endIndex !== null && (
               <>
                 <ReferenceArea
+                  yAxisId="pace"
                   x1={mockData[0].time}
                   x2={mockData[Math.min(startIndex, endIndex)].time}
-                  fillOpacity={0.5}
-                  fill="#1f2937"
+                  fill="url(#fadeGradient)"
                 />
                 <ReferenceArea
+                  yAxisId="pace"
                   x1={mockData[Math.max(startIndex, endIndex)].time}
                   x2={mockData[mockData.length - 1].time}
-                  fillOpacity={0.5}
-                  fill="#1f2937"
+                  fill="url(#fadeGradient)"
                 />
               </>
             )}
