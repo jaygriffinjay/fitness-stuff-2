@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState, useMemo, useCallback } from 'react';
+import { useState } from 'react';
 
 const Container = styled.div`
   background: white;
@@ -73,29 +73,29 @@ export function StatsOverview() {
   const [startIndex, setStartIndex] = useState<number | null>(null);
   const [endIndex, setEndIndex] = useState<number | null>(null);
 
-  const handleMouseDown = useCallback((e: any) => {
+  const handleMouseDown = (e: any) => {
     if (e.activeLabel) {
       const index = mockData.findIndex(d => d.time === e.activeLabel);
       setStartIndex(index);
       setEndIndex(null);
     }
-  }, []);
+  };
 
-  const handleMouseMove = useCallback((e: any) => {
+  const handleMouseMove = (e: any) => {
     if (startIndex !== null && e.activeLabel) {
       const index = mockData.findIndex(d => d.time === e.activeLabel);
       setEndIndex(index);
     }
-  }, [startIndex]);
+  };
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     if (startIndex === endIndex) {
       setStartIndex(null);
       setEndIndex(null);
     }
-  }, [startIndex, endIndex]);
+  };
 
-  const segmentStats = useMemo(() => {
+  const getSegmentStats = () => {
     if (startIndex === null || endIndex === null) return null;
     
     const start = Math.min(startIndex, endIndex);
@@ -111,45 +111,9 @@ export function StatsOverview() {
       avgPace: avgPace.toFixed(1),
       avgHR: Math.round(avgHR),
     };
-  }, [startIndex, endIndex]);
+  };
 
-  const referenceArea = useMemo(() => {
-    if (startIndex === null || endIndex === null) return null;
-    return (
-      <ReferenceArea
-        x1={mockData[Math.min(startIndex, endIndex)].time}
-        x2={mockData[Math.max(startIndex, endIndex)].time}
-        y1={5}
-        y2={13}
-        yAxisId="pace"
-        fill="#000"
-        fillOpacity={0.3}
-      />
-    );
-  }, [startIndex, endIndex]);
-
-  const areas = useMemo(() => (
-    <>
-      <Area 
-        yAxisId="pace"
-        type="monotone" 
-        dataKey="pace" 
-        stroke="#2563eb" 
-        fill="#93c5fd" 
-        fillOpacity={0.3} 
-        name="Pace (min/km)"
-      />
-      <Area 
-        yAxisId="hr"
-        type="monotone" 
-        dataKey="hr" 
-        stroke="#dc2626" 
-        fill="#fca5a5" 
-        fillOpacity={0.3}
-        name="Heart Rate"
-      />
-    </>
-  ), []);
+  const segmentStats = getSegmentStats();
 
   return (
     <Container>
@@ -183,8 +147,35 @@ export function StatsOverview() {
             <YAxis yAxisId="pace" domain={[5, 13]} />
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
-            {referenceArea}
-            {areas}
+            {startIndex !== null && endIndex !== null && (
+              <ReferenceArea
+                x1={mockData[Math.min(startIndex, endIndex)].time}
+                x2={mockData[Math.max(startIndex, endIndex)].time}
+                y1={5}
+                y2={13}
+                yAxisId="pace"
+                fill="#000"
+                fillOpacity={0.3}
+              />
+            )}
+            <Area 
+              yAxisId="pace"
+              type="monotone" 
+              dataKey="pace" 
+              stroke="#2563eb" 
+              fill="#93c5fd" 
+              fillOpacity={0.3} 
+              name="Pace (min/km)"
+            />
+            <Area 
+              yAxisId="hr"
+              type="monotone" 
+              dataKey="hr" 
+              stroke="#dc2626" 
+              fill="#fca5a5" 
+              fillOpacity={0.3}
+              name="Heart Rate"
+            />
           </AreaChart>
         </ResponsiveContainer>
       </ChartContainer>
