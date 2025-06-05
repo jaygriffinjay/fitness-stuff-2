@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 
 const Container = styled.div`
   background: white;
@@ -69,6 +69,12 @@ const mockData = [
 
 const chartMargin = { top: 20, right: 60, bottom: 30, left: 60 };
 
+const MemoizedArea = memo(Area);
+const MemoizedCartesianGrid = memo(CartesianGrid);
+const MemoizedXAxis = memo(XAxis);
+const MemoizedYAxis = memo(YAxis);
+const MemoizedTooltip = memo(Tooltip);
+
 export function StatsOverview() {
   const [startIndex, setStartIndex] = useState<number | null>(null);
   const [endIndex, setEndIndex] = useState<number | null>(null);
@@ -95,7 +101,7 @@ export function StatsOverview() {
     }
   };
 
-  const getSegmentStats = () => {
+  const segmentStats = useMemo(() => {
     if (startIndex === null || endIndex === null) return null;
     
     const start = Math.min(startIndex, endIndex);
@@ -111,9 +117,22 @@ export function StatsOverview() {
       avgPace: avgPace.toFixed(1),
       avgHR: Math.round(avgHR),
     };
-  };
+  }, [startIndex, endIndex]);
 
-  const segmentStats = getSegmentStats();
+  const referenceArea = useMemo(() => {
+    if (startIndex === null || endIndex === null) return null;
+    return (
+      <ReferenceArea
+        x1={mockData[Math.min(startIndex, endIndex)].time}
+        x2={mockData[Math.max(startIndex, endIndex)].time}
+        y1={5}
+        y2={13}
+        yAxisId="pace"
+        fill="#000"
+        fillOpacity={0.3}
+      />
+    );
+  }, [startIndex, endIndex]);
 
   return (
     <Container>
@@ -142,23 +161,13 @@ export function StatsOverview() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" />
-            <YAxis yAxisId="pace" domain={[5, 13]} />
-            <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
-            <Tooltip />
-            {startIndex !== null && endIndex !== null && (
-              <ReferenceArea
-                x1={mockData[Math.min(startIndex, endIndex)].time}
-                x2={mockData[Math.max(startIndex, endIndex)].time}
-                y1={5}
-                y2={13}
-                yAxisId="pace"
-                fill="#000"
-                fillOpacity={0.3}
-              />
-            )}
-            <Area 
+            <MemoizedCartesianGrid strokeDasharray="3 3" />
+            <MemoizedXAxis dataKey="time" />
+            <MemoizedYAxis yAxisId="pace" domain={[5, 13]} />
+            <MemoizedYAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
+            <MemoizedTooltip />
+            {referenceArea}
+            <MemoizedArea 
               yAxisId="pace"
               type="monotone" 
               dataKey="pace" 
@@ -167,7 +176,7 @@ export function StatsOverview() {
               fillOpacity={0.3} 
               name="Pace (min/km)"
             />
-            <Area 
+            <MemoizedArea 
               yAxisId="hr"
               type="monotone" 
               dataKey="hr" 
