@@ -58,6 +58,8 @@ const ChartContainer = styled.div`
   -ms-user-select: none;
 `;
 
+const CHART_MARGIN = { left: 60, right: 60, top: 20, bottom: 30 };
+
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
   top: ${CHART_MARGIN.top}px;
@@ -80,8 +82,6 @@ const mockData = [
   { time: '35:00', pace: 6.5, hr: 180 }, // Final sprint
   { time: '40:00', pace: 6.8, hr: 185 },
 ];
-
-const CHART_MARGIN = { left: 60, right: 60, top: 20, bottom: 30 };
 
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
