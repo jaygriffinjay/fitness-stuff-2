@@ -146,17 +146,19 @@ export function StatsOverview() {
             {startIndex !== null && endIndex !== null && (
               <>
                 <ReferenceArea
-                  yAxisId="pace"
                   x1={mockData[0].time}
                   x2={mockData[Math.min(startIndex, endIndex)].time}
-                  fill="#000000"
+                  y1={5}
+                  y2={13}
+                  fill="#000"
                   fillOpacity={0.3}
                 />
                 <ReferenceArea
-                  yAxisId="pace"
                   x1={mockData[Math.max(startIndex, endIndex)].time}
                   x2={mockData[mockData.length - 1].time}
-                  fill="#000000"
+                  y1={5}
+                  y2={13}
+                  fill="#000"
                   fillOpacity={0.3}
                 />
               </>
