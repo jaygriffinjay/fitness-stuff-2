@@ -74,16 +74,18 @@ export function StatsOverview() {
   const [endIndex, setEndIndex] = useState<number | null>(null);
 
   const handleMouseDown = (e: any) => {
-    if (e.activeLabel) {
-      const index = mockData.findIndex(d => d.time === e.activeLabel);
+    if (!e.activeLabel) return;
+    const index = mockData.findIndex(d => d.time === e.activeLabel);
+    if (index !== startIndex) {
       setStartIndex(index);
       setEndIndex(null);
     }
   };
 
   const handleMouseMove = (e: any) => {
-    if (startIndex !== null && e.activeLabel) {
-      const index = mockData.findIndex(d => d.time === e.activeLabel);
+    if (startIndex === null || !e.activeLabel) return;
+    const index = mockData.findIndex(d => d.time === e.activeLabel);
+    if (index !== endIndex) {
       setEndIndex(index);
     }
   };
