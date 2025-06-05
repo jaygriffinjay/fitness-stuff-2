@@ -56,15 +56,15 @@ const ChartContainer = styled.div`
 `;
 
 const mockData = [
-  { time: '0:00', pace: 12.0, hr: 90 }, // Walking
-  { time: '5:00', pace: 11.5, hr: 95 },
-  { time: '10:00', pace: 8.0, hr: 150 }, // Started running
-  { time: '15:00', pace: 7.5, hr: 165 },
-  { time: '20:00', pace: 7.2, hr: 170 },
-  { time: '25:00', pace: 9.5, hr: 140 }, // Slowed down
-  { time: '30:00', pace: 9.0, hr: 135 },
-  { time: '35:00', pace: 6.5, hr: 180 }, // Final sprint
-  { time: '40:00', pace: 6.8, hr: 185 },
+  { time: '0:00', pace: 12.0, hr: 90, index: 0 }, // Walking
+  { time: '5:00', pace: 11.5, hr: 95, index: 1 },
+  { time: '10:00', pace: 8.0, hr: 150, index: 2 }, // Started running
+  { time: '15:00', pace: 7.5, hr: 165, index: 3 },
+  { time: '20:00', pace: 7.2, hr: 170, index: 4 },
+  { time: '25:00', pace: 9.5, hr: 140, index: 5 }, // Slowed down
+  { time: '30:00', pace: 9.0, hr: 135, index: 6 },
+  { time: '35:00', pace: 6.5, hr: 180, index: 7 }, // Final sprint
+  { time: '40:00', pace: 6.8, hr: 185, index: 8 },
 ];
 
 export function StatsOverview() {
@@ -146,18 +146,20 @@ export function StatsOverview() {
             {startIndex !== null && endIndex !== null && (
               <>
                 <ReferenceArea
-                  x1={mockData[0].time}
-                  x2={mockData[Math.min(startIndex, endIndex)].time}
+                  x1={mockData[0].index}
+                  x2={mockData[Math.min(startIndex, endIndex)].index}
                   y1={5}
                   y2={13}
+                  yAxisId="pace"
                   fill="#000"
                   fillOpacity={0.3}
                 />
                 <ReferenceArea
-                  x1={mockData[Math.max(startIndex, endIndex)].time}
-                  x2={mockData[mockData.length - 1].time}
+                  x1={mockData[Math.max(startIndex, endIndex)].index}
+                  x2={mockData[mockData.length - 1].index}
                   y1={5}
                   y2={13}
+                  yAxisId="pace"
                   fill="#000"
                   fillOpacity={0.3}
                 />
