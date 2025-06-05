@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 const Container = styled.div`
   background: white;
@@ -49,6 +49,14 @@ const SegmentStats = styled.div`
   margin-top: 1rem;
 `;
 
+const ChartContainer = styled.div`
+  height: 300px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+`;
+
 const mockData = [
   { time: '0:00', pace: 12.0, hr: 90 }, // Walking
   { time: '5:00', pace: 11.5, hr: 95 },
@@ -63,20 +71,20 @@ const mockData = [
 
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
-  const [startIndex, setStartIndex] = useState<number | null>(null);
-  const [endIndex, setEndIndex] = useState<number | null>(null);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [endX, setEndX] = useState<number | null>(null);
+  const chartRef = useRef<any>(null);
 
   const handleMouseDown = (e: any) => {
-    if (e.activeTooltipIndex !== undefined) {
-      setSelecting(true);
-      setStartIndex(e.activeTooltipIndex);
-      setEndIndex(e.activeTooltipIndex);
-    }
+    if (!e || !e.activeLabel) return;
+    setSelecting(true);
+    setStartX(e.activeLabel);
+    setEndX(e.activeLabel);
   };
 
   const handleMouseMove = (e: any) => {
-    if (selecting && e.activeTooltipIndex !== undefined) {
-      setEndIndex(e.activeTooltipIndex);
+    if (selecting && e && e.activeLabel) {
+      setEndX(e.activeLabel);
     }
   };
 
@@ -85,10 +93,14 @@ export function StatsOverview() {
   };
 
   const getSegmentStats = () => {
-    if (startIndex === null || endIndex === null) return null;
+    if (!startX || !endX) return null;
     
-    const start = Math.min(startIndex, endIndex);
-    const end = Math.max(startIndex, endIndex);
+    const startIdx = mockData.findIndex(d => d.time === startX);
+    const endIdx = mockData.findIndex(d => d.time === endX);
+    if (startIdx === -1 || endIdx === -1) return null;
+    
+    const start = Math.min(startIdx, endIdx);
+    const end = Math.max(startIdx, endIdx);
     const segment = mockData.slice(start, end + 1);
     
     const avgPace = segment.reduce((sum, point) => sum + point.pace, 0) / segment.length;
@@ -122,38 +134,34 @@ export function StatsOverview() {
         </StatCard>
       </StatsGrid>
       
-      <div style={{ height: '300px' }}>
+      <ChartContainer>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart 
             data={mockData}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            ref={chartRef}
           >
-            <defs>
-              <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1f2937" stopOpacity={0.5}/>
-                <stop offset="100%" stopColor="#1f2937" stopOpacity={0.5}/>
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis yAxisId="pace" domain={[5, 13]} />
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
-            {startIndex !== null && endIndex !== null && (
+            {startX && endX && (
               <>
                 <ReferenceArea
-                  yAxisId="pace"
                   x1={mockData[0].time}
-                  x2={mockData[Math.min(startIndex, endIndex)].time}
-                  fill="url(#fadeGradient)"
+                  x2={startX}
+                  fill="#1f2937"
+                  fillOpacity={0.3}
                 />
                 <ReferenceArea
-                  yAxisId="pace"
-                  x1={mockData[Math.max(startIndex, endIndex)].time}
+                  x1={endX}
                   x2={mockData[mockData.length - 1].time}
-                  fill="url(#fadeGradient)"
+                  fill="#1f2937"
+                  fillOpacity={0.3}
                 />
               </>
             )}
@@ -177,7 +185,7 @@ export function StatsOverview() {
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </ChartContainer>
 
       {segmentStats && (
         <SegmentStats>
