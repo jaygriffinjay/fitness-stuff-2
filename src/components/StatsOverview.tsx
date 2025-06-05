@@ -94,9 +94,10 @@ export function StatsOverview() {
   useEffect(() => {
     if (chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
+      const chartWidth = rect.width - (CHART_MARGIN.left + CHART_MARGIN.right);
       setChartBounds({ 
-        left: rect.left + CHART_MARGIN.left,
-        width: rect.width - (CHART_MARGIN.left + CHART_MARGIN.right)
+        left: CHART_MARGIN.left,
+        width: chartWidth
       });
     }
   }, []);
@@ -104,17 +105,31 @@ export function StatsOverview() {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!chartRef.current) return;
     const rect = chartRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(chartBounds.width, e.clientX - (rect.left + CHART_MARGIN.left)));
-    setSelecting(true);
-    setStartX(x);
-    setCurrentX(x);
+    const x = e.clientX - rect.left;
+    
+    // Only start selection if click is within chart area
+    if (x >= CHART_MARGIN.left && x <= rect.width - CHART_MARGIN.right) {
+      setSelecting(true);
+      setStartX(x - CHART_MARGIN.left);
+      setCurrentX(x - CHART_MARGIN.left);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (selecting && chartRef.current) {
       const rect = chartRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(chartBounds.width, e.clientX - (rect.left + CHART_MARGIN.left)));
-      setCurrentX(x);
+      const x = e.clientX - rect.left;
+      
+      // Constrain movement to chart area
+      const constrainedX = Math.max(
+        0,
+        Math.min(
+          chartBounds.width,
+          x - CHART_MARGIN.left
+        )
+      );
+      
+      setCurrentX(constrainedX);
     }
   };
 
@@ -128,7 +143,7 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [CHART_MARGIN.left, maxX + CHART_MARGIN.left],
+        left: [0, maxX],
         width: [minX, chartBounds.width - maxX]
       });
     } else {
@@ -185,18 +200,29 @@ export function StatsOverview() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {overlayDimensions.left.map((left, i) => (
-          <DarkenedOverlay
-            key={i}
-            left={left}
-            width={overlayDimensions.width[i]}
-          />
-        ))}
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={mockData}
             margin={CHART_MARGIN}
           >
+            <defs>
+              <clipPath id="chartArea">
+                <rect x={CHART_MARGIN.left} y={CHART_MARGIN.top} 
+                      width={`calc(100% - ${CHART_MARGIN.left + CHART_MARGIN.right}px)`} 
+                      height={`calc(100% - ${CHART_MARGIN.top + CHART_MARGIN.bottom}px)`} />
+              </clipPath>
+            </defs>
+            {overlayDimensions.left.map((left, i) => (
+              <rect
+                key={i}
+                x={left + CHART_MARGIN.left}
+                y={CHART_MARGIN.top}
+                width={overlayDimensions.width[i]}
+                height={`calc(100% - ${CHART_MARGIN.top + CHART_MARGIN.bottom}px)`}
+                fill="rgba(0, 0, 0, 0.3)"
+                clipPath="url(#chartArea)"
+              />
+            ))}
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis yAxisId="pace" domain={[5, 13]} />
