@@ -1,6 +1,6 @@
 import styled from 'styled-components';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState, useRef } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useRef, useEffect } from 'react';
 
 const Container = styled.div`
   background: white;
@@ -51,10 +51,22 @@ const SegmentStats = styled.div`
 
 const ChartContainer = styled.div`
   height: 300px;
+  position: relative;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+`;
+
+const DarkenedOverlay = styled.div<{ left: number; width: number }>`
+  position: absolute;
+  top: 0;
+  left: ${props => props.left}px;
+  width: ${props => props.width}px;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 1;
 `;
 
 const mockData = [
@@ -72,19 +84,32 @@ const mockData = [
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
   const [startX, setStartX] = useState<number | null>(null);
-  const [endX, setEndX] = useState<number | null>(null);
-  const chartRef = useRef<any>(null);
+  const [currentX, setCurrentX] = useState<number | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartBounds, setChartBounds] = useState({ left: 0, width: 0 });
+  const [overlayDimensions, setOverlayDimensions] = useState<{ left: number[]; width: number[] }>({ left: [], width: [] });
 
-  const handleMouseDown = (e: any) => {
-    if (!e || !e.activeLabel) return;
+  useEffect(() => {
+    if (chartRef.current) {
+      const rect = chartRef.current.getBoundingClientRect();
+      setChartBounds({ left: rect.left, width: rect.width });
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!chartRef.current) return;
+    const rect = chartRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
     setSelecting(true);
-    setStartX(e.activeLabel);
-    setEndX(e.activeLabel);
+    setStartX(x);
+    setCurrentX(x);
   };
 
-  const handleMouseMove = (e: any) => {
-    if (selecting && e && e.activeLabel) {
-      setEndX(e.activeLabel);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (selecting && chartRef.current) {
+      const rect = chartRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      setCurrentX(x);
     }
   };
 
@@ -92,16 +117,30 @@ export function StatsOverview() {
     setSelecting(false);
   };
 
+  useEffect(() => {
+    if (startX !== null && currentX !== null) {
+      const minX = Math.min(startX, currentX);
+      const maxX = Math.max(startX, currentX);
+      
+      setOverlayDimensions({
+        left: [0, maxX],
+        width: [minX, chartBounds.width - maxX]
+      });
+    } else {
+      setOverlayDimensions({ left: [], width: [] });
+    }
+  }, [startX, currentX, chartBounds.width]);
+
   const getSegmentStats = () => {
-    if (!startX || !endX) return null;
+    if (!startX || !currentX) return null;
     
-    const startIdx = mockData.findIndex(d => d.time === startX);
-    const endIdx = mockData.findIndex(d => d.time === endX);
-    if (startIdx === -1 || endIdx === -1) return null;
+    const startPercent = (Math.min(startX, currentX) / chartBounds.width);
+    const endPercent = (Math.max(startX, currentX) / chartBounds.width);
     
-    const start = Math.min(startIdx, endIdx);
-    const end = Math.max(startIdx, endIdx);
-    const segment = mockData.slice(start, end + 1);
+    const startIdx = Math.floor(startPercent * (mockData.length - 1));
+    const endIdx = Math.ceil(endPercent * (mockData.length - 1));
+    
+    const segment = mockData.slice(startIdx, endIdx + 1);
     
     const avgPace = segment.reduce((sum, point) => sum + point.pace, 0) / segment.length;
     const avgHR = segment.reduce((sum, point) => sum + point.hr, 0) / segment.length;
@@ -134,37 +173,27 @@ export function StatsOverview() {
         </StatCard>
       </StatsGrid>
       
-      <ChartContainer>
+      <ChartContainer
+        ref={chartRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {overlayDimensions.left.map((left, i) => (
+          <DarkenedOverlay
+            key={i}
+            left={left}
+            width={overlayDimensions.width[i]}
+          />
+        ))}
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart 
-            data={mockData}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            ref={chartRef}
-          >
+          <AreaChart data={mockData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis yAxisId="pace" domain={[5, 13]} />
             <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
             <Tooltip />
-            {startX && endX && (
-              <>
-                <ReferenceArea
-                  x1={mockData[0].time}
-                  x2={startX}
-                  fill="#1f2937"
-                  fillOpacity={0.3}
-                />
-                <ReferenceArea
-                  x1={endX}
-                  x2={mockData[mockData.length - 1].time}
-                  fill="#1f2937"
-                  fillOpacity={0.3}
-                />
-              </>
-            )}
             <Area 
               yAxisId="pace"
               type="monotone" 
