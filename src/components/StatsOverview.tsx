@@ -60,10 +60,10 @@ const ChartContainer = styled.div`
 
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
-  top: 10px;
+  top: ${CHART_MARGIN.top}px;
   left: ${props => props.left}px;
   width: ${props => props.width}px;
-  height: calc(100% - 60px);
+  height: calc(100% - ${CHART_MARGIN.top + CHART_MARGIN.bottom}px);
   background-color: rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 1;
@@ -81,7 +81,7 @@ const mockData = [
   { time: '40:00', pace: 6.8, hr: 185 },
 ];
 
-const CHART_MARGIN = { left: 60, right: 60, top: 10, bottom: 50 };
+const CHART_MARGIN = { left: 60, right: 60, top: 20, bottom: 30 };
 
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
@@ -128,8 +128,8 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [0, maxX + CHART_MARGIN.left],
-        width: [minX + CHART_MARGIN.left, chartBounds.width - maxX]
+        left: [CHART_MARGIN.left, maxX + CHART_MARGIN.left],
+        width: [minX, chartBounds.width - maxX]
       });
     } else {
       setOverlayDimensions({ left: [], width: [] });
