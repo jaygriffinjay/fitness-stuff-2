@@ -60,10 +60,10 @@ const ChartContainer = styled.div`
 
 const DarkenedOverlay = styled.div<{ left: number; width: number }>`
   position: absolute;
-  top: 0;
+  top: 10px;
   left: ${props => props.left}px;
   width: ${props => props.width}px;
-  height: calc(100% - 45px);
+  height: calc(100% - 60px);
   background-color: rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 1;
@@ -81,7 +81,7 @@ const mockData = [
   { time: '40:00', pace: 6.8, hr: 185 },
 ];
 
-const CHART_MARGIN = { left: 60, right: 60 };
+const CHART_MARGIN = { left: 60, right: 60, top: 10, bottom: 50 };
 
 export function StatsOverview() {
   const [selecting, setSelecting] = useState(false);
@@ -128,8 +128,8 @@ export function StatsOverview() {
       const maxX = Math.max(startX, currentX);
       
       setOverlayDimensions({
-        left: [CHART_MARGIN.left, maxX + CHART_MARGIN.left],
-        width: [minX, chartBounds.width - maxX]
+        left: [0, maxX + CHART_MARGIN.left],
+        width: [minX + CHART_MARGIN.left, chartBounds.width - maxX]
       });
     } else {
       setOverlayDimensions({ left: [], width: [] });
@@ -193,7 +193,10 @@ export function StatsOverview() {
           />
         ))}
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockData}>
+          <AreaChart
+            data={mockData}
+            margin={CHART_MARGIN}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis yAxisId="pace" domain={[5, 13]} />
