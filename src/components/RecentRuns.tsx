@@ -28,6 +28,12 @@ const RunCard = styled.div`
   background: #f3f4f6;
   border-radius: 8px;
   gap: 1rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    text-align: center;
+  }
 `;
 
 const RunDate = styled.div`
@@ -38,6 +44,16 @@ const RunDate = styled.div`
 const RunStats = styled.div`
   display: flex;
   gap: 2rem;
+  
+  @media (max-width: 768px) {
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 `;
 
 const StatItem = styled.div`

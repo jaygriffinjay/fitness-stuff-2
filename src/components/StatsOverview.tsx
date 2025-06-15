@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { useState } from 'react';
+import { useState, useCallback, useMemo, useRef, memo } from 'react';
+import React from 'react';
 
 const Container = styled.div`
   background: white;
@@ -18,7 +19,7 @@ const Title = styled.h2`
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
 `;
@@ -53,6 +54,8 @@ const ChartContainer = styled.div`
   height: 300px;
   position: relative;
   user-select: none;
+  width: 100%;
+  overflow: hidden;
 `;
 
 const mockData = [
@@ -67,32 +70,122 @@ const mockData = [
   { index: 8, time: '40:00', pace: 6.8, hr: 185 },
 ];
 
-const chartMargin = { top: 20, right: 60, bottom: 30, left: 60 };
+const chartMargin = { top: 20, right: 30, bottom: 30, left: 30 };
+
+// Global ref to communicate between chart and parent without props
+let globalSelectionCallback: ((selection: { start: number | null; end: number | null }) => void) | null = null;
+
+// Completely static chart component - zero props, never re-renders
+const StaticChart = memo(() => {
+  console.log('🔄 Chart component re-rendering');
+  
+  const selectionRef = useRef<{ start: number | null; end: number | null }>({ start: null, end: null });
+  const [, forceUpdate] = useState({});
+  
+  const handlers = useMemo(() => ({
+    onMouseDown: (e: any) => {
+      console.log('🖱️ Mouse down event');
+      if (!e?.activeLabel) return;
+      const index = mockData.findIndex(d => d.time === e.activeLabel);
+      const newSelection = { start: index, end: index };
+      selectionRef.current = newSelection;
+      globalSelectionCallback?.(newSelection);
+      forceUpdate({});
+    },
+    
+    onMouseMove: (e: any) => {
+      if (selectionRef.current.start === null || !e?.activeLabel) return;
+      const index = mockData.findIndex(d => d.time === e.activeLabel);
+      if (index !== selectionRef.current.end) {
+        const newSelection = { ...selectionRef.current, end: index };
+        selectionRef.current = newSelection;
+        globalSelectionCallback?.(newSelection);
+        forceUpdate({});
+      }
+    },
+    
+    onMouseUp: () => {
+      console.log('🖱️ Mouse up event', selectionRef.current);
+      // Clear selection if it's just a single point (click without drag)
+      if (selectionRef.current.start !== null && selectionRef.current.start === selectionRef.current.end) {
+        const newSelection = { start: null, end: null };
+        selectionRef.current = newSelection;
+        globalSelectionCallback?.(newSelection);
+        forceUpdate({});
+      }
+    }
+  }), []);
+  
+  // Direct calculation - always reflects current selection, enables overlay
+  const referenceAreaProps = (() => {
+    const { start, end } = selectionRef.current;
+    if (start === null || end === null) return null;
+    
+    return {
+      x1: mockData[Math.min(start, end)].time,
+      x2: mockData[Math.max(start, end)].time,
+      y1: 5,
+      y2: 13,
+      yAxisId: "pace" as const,
+      fill: "#000",
+      fillOpacity: 0.3,
+    };
+  })();
+  
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart
+        data={mockData}
+        margin={chartMargin}
+        onMouseDown={handlers.onMouseDown}
+        onMouseMove={handlers.onMouseMove}
+        onMouseUp={handlers.onMouseUp}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="time" />
+        <YAxis yAxisId="pace" domain={[5, 13]} />
+        <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
+        <Tooltip />
+        {referenceAreaProps && (
+          <ReferenceArea {...referenceAreaProps} />
+        )}
+        <Area 
+          yAxisId="pace"
+          type="monotone" 
+          dataKey="pace" 
+          stroke="#2563eb" 
+          fill="#93c5fd" 
+          fillOpacity={0.3} 
+          name="Pace (min/km)"
+        />
+        <Area 
+          yAxisId="hr"
+          type="monotone" 
+          dataKey="hr" 
+          stroke="#dc2626" 
+          fill="#fca5a5" 
+          fillOpacity={0.3}
+          name="Heart Rate"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+});
 
 export function StatsOverview() {
-  const [selection, setSelection] = useState({ start: null, end: null });
+  console.log('🔄 StatsOverview component re-rendering');
+  
+  const [selection, setSelection] = useState<{ start: number | null; end: number | null }>({ start: null, end: null });
 
-  const handleMouseDown = (e) => {
-    if (!e?.activeLabel) return;
-    const index = mockData.findIndex(d => d.time === e.activeLabel);
-    setSelection({ start: index, end: index });
-  };
+  // Set up the global callback - this doesn't change, so no re-renders
+  React.useEffect(() => {
+    globalSelectionCallback = setSelection;
+    return () => {
+      globalSelectionCallback = null;
+    };
+  }, []);
 
-  const handleMouseMove = (e) => {
-    if (selection.start === null || !e?.activeLabel) return;
-    const index = mockData.findIndex(d => d.time === e.activeLabel);
-    if (index !== selection.end) {
-      setSelection(prev => ({ ...prev, end: index }));
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (selection.start === selection.end) {
-      setSelection({ start: null, end: null });
-    }
-  };
-
-  const getSegmentStats = () => {
+  const segmentStats = useMemo(() => {
     if (selection.start === null || selection.end === null) return null;
     
     const start = Math.min(selection.start, selection.end);
@@ -108,9 +201,7 @@ export function StatsOverview() {
       avgPace: avgPace.toFixed(1),
       avgHR: Math.round(avgHR),
     };
-  };
-
-  const segmentStats = getSegmentStats();
+  }, [selection.start, selection.end]);
 
   return (
     <Container>
@@ -131,50 +222,7 @@ export function StatsOverview() {
       </StatsGrid>
       
       <ChartContainer>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={mockData}
-            margin={chartMargin}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" />
-            <YAxis yAxisId="pace" domain={[5, 13]} />
-            <YAxis yAxisId="hr" orientation="right" domain={[80, 190]} />
-            <Tooltip />
-            {selection.start !== null && selection.end !== null && (
-              <ReferenceArea
-                x1={mockData[Math.min(selection.start, selection.end)].time}
-                x2={mockData[Math.max(selection.start, selection.end)].time}
-                y1={5}
-                y2={13}
-                yAxisId="pace"
-                fill="#000"
-                fillOpacity={0.3}
-              />
-            )}
-            <Area 
-              yAxisId="pace"
-              type="monotone" 
-              dataKey="pace" 
-              stroke="#2563eb" 
-              fill="#93c5fd" 
-              fillOpacity={0.3} 
-              name="Pace (min/km)"
-            />
-            <Area 
-              yAxisId="hr"
-              type="monotone" 
-              dataKey="hr" 
-              stroke="#dc2626" 
-              fill="#fca5a5" 
-              fillOpacity={0.3}
-              name="Heart Rate"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <StaticChart />
       </ChartContainer>
 
       {segmentStats && (
